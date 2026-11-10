@@ -1,0 +1,323 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 4.1: Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // 1. UserSettings validation
+    function isValidUserSettings(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.themeMode is string && (data.themeMode == 'SYSTEM' || data.themeMode == 'LIGHT' || data.themeMode == 'DARK') &&
+             data.accentHex is string && data.accentHex.size() >= 1 && data.accentHex.size() <= 20 &&
+             data.fontFamily is string && data.fontFamily.size() >= 1 && data.fontFamily.size() <= 60 &&
+             data.fontScale is string && (data.fontScale == 'SMALL' || data.fontScale == 'NORMAL' || data.fontScale == 'LARGE' || data.fontScale == 'XLARGE') &&
+             data.compactMode is bool &&
+             data.languageCode is string && data.languageCode.size() >= 1 && data.languageCode.size() <= 20 &&
+             data.appLockEnabled is bool &&
+             data.appLockPin is string && data.appLockPin.size() <= 16 &&
+             data.notificationsEnabled is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 2. UserProfile validation
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.fullName is string && data.fullName.size() <= 120 &&
+             data.jobTitle is string && data.jobTitle.size() <= 120 &&
+             data.email is string && data.email.size() <= 160 &&
+             data.phone is string && data.phone.size() <= 60 &&
+             data.location is string && data.location.size() <= 160 &&
+             data.website is string && data.website.size() <= 200 &&
+             data.summary is string && data.summary.size() <= 4000 &&
+             data.experienceText is string && data.experienceText.size() <= 8000 &&
+             data.educationText is string && data.educationText.size() <= 8000 &&
+             data.skillsText is string && data.skillsText.size() <= 4000 &&
+             data.referencesText is string && data.referencesText.size() <= 4000 &&
+             data.avatarUri is string && data.avatarUri.size() <= 1000 &&
+             data.defaultSignatureSvg is string && data.defaultSignatureSvg.size() <= 20000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 3. DocumentItem validation
+    function isValidDocumentItem(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+             data.templateId is string && data.templateId.size() <= 128 &&
+             data.folderId is string && data.folderId.size() <= 128 &&
+             data.status is string && (data.status == 'draft' || data.status == 'completed' || data.status == 'archived') &&
+             data.isFavorite is bool &&
+             data.pageFormat is string && (data.pageFormat == 'A4' || data.pageFormat == 'Letter') &&
+             data.orientation is string && (data.orientation == 'Portrait' || data.orientation == 'Landscape') &&
+             data.marginMm is int && data.marginMm >= 0 && data.marginMm <= 60 &&
+             data.accentHex is string && data.accentHex.size() >= 1 && data.accentHex.size() <= 20 &&
+             data.fontFamily is string && data.fontFamily.size() >= 1 && data.fontFamily.size() <= 60 &&
+             data.sectionsData is string && data.sectionsData.size() <= 150000 &&
+             data.signatureSvg is string && data.signatureSvg.size() <= 30000 &&
+             data.scannedPagesData is string && data.scannedPagesData.size() <= 50000 &&
+             data.wordCount is int && data.wordCount >= 0 && data.wordCount <= 500000 &&
+             data.pageCount is int && data.pageCount >= 1 && data.pageCount <= 1000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 4. FolderItem validation
+    function isValidFolderItem(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+             data.description is string && data.description.size() <= 500 &&
+             data.colorHex is string && data.colorHex.size() >= 1 && data.colorHex.size() <= 20 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 5. SignatureItem validation
+    function isValidSignatureItem(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.label is string && data.label.size() >= 1 && data.label.size() <= 100 &&
+             data.svgPathData is string && data.svgPathData.size() >= 1 && data.svgPathData.size() <= 30000 &&
+             data.strokeColorHex is string && data.strokeColorHex.size() >= 1 && data.strokeColorHex.size() <= 20 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 6. ExportRecord validation
+    function isValidExportRecord(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.documentId is string && data.documentId.size() <= 128 &&
+             data.documentTitle is string && data.documentTitle.size() >= 1 && data.documentTitle.size() <= 200 &&
+             data.format is string && (data.format == 'PDF' || data.format == 'TXT' || data.format == 'CSV') &&
+             data.pageSize is string && data.pageSize.size() >= 1 && data.pageSize.size() <= 40 &&
+             data.fileSizeBytes is int && data.fileSizeBytes >= 0 && data.fileSizeBytes <= 100000000 &&
+             data.fileUri is string && data.fileUri.size() <= 1000 &&
+             data.status is string && (data.status == 'completed' || data.status == 'failed') &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // Collection 1: /users/{userId}
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll([
+                         'userId', 'themeMode', 'accentHex', 'fontFamily', 'fontScale',
+                         'compactMode', 'languageCode', 'appLockEnabled', 'appLockPin',
+                         'notificationsEnabled', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'themeMode', 'accentHex', 'fontFamily', 'fontScale',
+                         'compactMode', 'languageCode', 'appLockEnabled', 'appLockPin',
+                         'notificationsEnabled', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserSettings(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidUserSettings(incoming()) &&
+                       request.auth.uid == userId &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'themeMode', 'accentHex', 'fontFamily', 'fontScale',
+                         'compactMode', 'languageCode', 'appLockEnabled', 'appLockPin',
+                         'notificationsEnabled', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    // Collection 2: /profiles/{userId}
+    match /profiles/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll([
+                         'userId', 'fullName', 'jobTitle', 'email', 'phone', 'location',
+                         'website', 'summary', 'experienceText', 'educationText',
+                         'skillsText', 'referencesText', 'avatarUri', 'defaultSignatureSvg',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'fullName', 'jobTitle', 'email', 'phone', 'location',
+                         'website', 'summary', 'experienceText', 'educationText',
+                         'skillsText', 'referencesText', 'avatarUri', 'defaultSignatureSvg',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       request.auth.uid == userId &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'fullName', 'jobTitle', 'email', 'phone', 'location',
+                         'website', 'summary', 'experienceText', 'educationText',
+                         'skillsText', 'referencesText', 'avatarUri', 'defaultSignatureSvg',
+                         'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    // Collection 3: /documents/{documentId}
+    match /documents/{documentId} {
+      allow get: if isSignedIn() && isValidId(documentId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(documentId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'title', 'category', 'templateId', 'folderId',
+                         'status', 'isFavorite', 'pageFormat', 'orientation', 'marginMm',
+                         'accentHex', 'fontFamily', 'sectionsData', 'signatureSvg',
+                         'scannedPagesData', 'wordCount', 'pageCount', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'title', 'category', 'templateId', 'folderId',
+                         'status', 'isFavorite', 'pageFormat', 'orientation', 'marginMm',
+                         'accentHex', 'fontFamily', 'sectionsData', 'signatureSvg',
+                         'scannedPagesData', 'wordCount', 'pageCount', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidDocumentItem(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(documentId) &&
+                       isValidDocumentItem(incoming()) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'title', 'category', 'templateId', 'folderId',
+                         'status', 'isFavorite', 'pageFormat', 'orientation', 'marginMm',
+                         'accentHex', 'fontFamily', 'sectionsData', 'signatureSvg',
+                         'scannedPagesData', 'wordCount', 'pageCount', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(documentId) && existing().userId == request.auth.uid;
+    }
+
+    // Collection 4: /folders/{folderId}
+    match /folders/{folderId} {
+      allow get: if isSignedIn() && isValidId(folderId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(folderId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'name', 'description', 'colorHex', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'name', 'description', 'colorHex', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidFolderItem(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(folderId) &&
+                       isValidFolderItem(incoming()) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'name', 'description', 'colorHex', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(folderId) && existing().userId == request.auth.uid;
+    }
+
+    // Collection 5: /signatures/{signatureId}
+    match /signatures/{signatureId} {
+      allow get: if isSignedIn() && isValidId(signatureId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(signatureId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'label', 'svgPathData', 'strokeColorHex', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'label', 'svgPathData', 'strokeColorHex', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidSignatureItem(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(signatureId) &&
+                       isValidSignatureItem(incoming()) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'label', 'svgPathData', 'strokeColorHex', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(signatureId) && existing().userId == request.auth.uid;
+    }
+
+    // Collection 6: /exports/{exportId}
+    match /exports/{exportId} {
+      allow get: if isSignedIn() && isValidId(exportId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(exportId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'documentId', 'documentTitle', 'format', 'pageSize',
+                         'fileSizeBytes', 'fileUri', 'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'documentId', 'documentTitle', 'format', 'pageSize',
+                         'fileSizeBytes', 'fileUri', 'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidExportRecord(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(exportId) &&
+                       isValidExportRecord(incoming()) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'fileSizeBytes', 'fileUri', 'status', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(exportId) && existing().userId == request.auth.uid;
+    }
+  }
+}

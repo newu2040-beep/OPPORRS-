@@ -1,0 +1,222 @@
+{
+  "entities": {
+    "UserSettings": {
+      "title": "UserSettings",
+      "description": "Per-user application preferences, theme configuration, and security settings.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "themeMode": { "type": "string", "enum": ["SYSTEM", "LIGHT", "DARK"], "description": "Active theme mode." },
+        "accentHex": { "type": "string", "description": "Brand accent color hex code." },
+        "fontFamily": { "type": "string", "description": "Preferred UI and document font family." },
+        "fontScale": { "type": "string", "enum": ["SMALL", "NORMAL", "LARGE", "XLARGE"], "description": "Text size scaling preset." },
+        "compactMode": { "type": "boolean", "description": "Whether compact layout density is enabled." },
+        "languageCode": { "type": "string", "description": "Preferred application language code." },
+        "appLockEnabled": { "type": "boolean", "description": "Whether biometric or PIN app lock is active." },
+        "appLockPin": { "type": "string", "description": "Optional fallback PIN code." },
+        "notificationsEnabled": { "type": "boolean", "description": "Whether document notifications are enabled." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last update." }
+      },
+      "required": [
+        "userId",
+        "themeMode",
+        "accentHex",
+        "fontFamily",
+        "fontScale",
+        "compactMode",
+        "languageCode",
+        "appLockEnabled",
+        "appLockPin",
+        "notificationsEnabled",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Reusable personal profile fields for one-tap insertion into CVs, cover letters, and documents.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "fullName": { "type": "string", "description": "Full legal or professional name." },
+        "jobTitle": { "type": "string", "description": "Current or target professional title." },
+        "email": { "type": "string", "description": "Professional contact email." },
+        "phone": { "type": "string", "description": "Contact phone number." },
+        "location": { "type": "string", "description": "City, region, or country." },
+        "website": { "type": "string", "description": "Portfolio, LinkedIn, or personal website." },
+        "summary": { "type": "string", "description": "Professional summary or bio." },
+        "experienceText": { "type": "string", "description": "Structured work experience entries." },
+        "educationText": { "type": "string", "description": "Structured education entries." },
+        "skillsText": { "type": "string", "description": "Comma or pipe-separated skills." },
+        "referencesText": { "type": "string", "description": "Professional references." },
+        "avatarUri": { "type": "string", "description": "Selected profile photo URI." },
+        "defaultSignatureSvg": { "type": "string", "description": "Default vector signature path data." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last update." }
+      },
+      "required": [
+        "userId",
+        "fullName",
+        "jobTitle",
+        "email",
+        "phone",
+        "location",
+        "website",
+        "summary",
+        "experienceText",
+        "educationText",
+        "skillsText",
+        "referencesText",
+        "avatarUri",
+        "defaultSignatureSvg",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DocumentItem": {
+      "title": "DocumentItem",
+      "description": "User-authored or scanned document with rich sections, formatting, signatures, and metadata.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "title": { "type": "string", "description": "Document title." },
+        "category": { "type": "string", "description": "Document category (Career, Business, Education, etc.)." },
+        "templateId": { "type": "string", "description": "Source template identifier if created from a template." },
+        "folderId": { "type": "string", "description": "Assigned folder ID or empty string." },
+        "status": { "type": "string", "enum": ["draft", "completed", "archived"], "description": "Lifecycle status of the document." },
+        "isFavorite": { "type": "boolean", "description": "Whether the document is starred/favorited." },
+        "pageFormat": { "type": "string", "enum": ["A4", "Letter"], "description": "Target export paper size." },
+        "orientation": { "type": "string", "enum": ["Portrait", "Landscape"], "description": "Target page orientation." },
+        "marginMm": { "type": "integer", "description": "Page margin in millimeters." },
+        "accentHex": { "type": "string", "description": "Document theme accent hex." },
+        "fontFamily": { "type": "string", "description": "Document typography family." },
+        "sectionsData": { "type": "string", "description": "Structured document sections payload." },
+        "signatureSvg": { "type": "string", "description": "Embedded vector signature path data." },
+        "scannedPagesData": { "type": "string", "description": "Scanned page metadata and URIs." },
+        "wordCount": { "type": "integer", "description": "Calculated word count." },
+        "pageCount": { "type": "integer", "description": "Estimated page count." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last update." }
+      },
+      "required": [
+        "userId",
+        "title",
+        "category",
+        "templateId",
+        "folderId",
+        "status",
+        "isFavorite",
+        "pageFormat",
+        "orientation",
+        "marginMm",
+        "accentHex",
+        "fontFamily",
+        "sectionsData",
+        "signatureSvg",
+        "scannedPagesData",
+        "wordCount",
+        "pageCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FolderItem": {
+      "title": "FolderItem",
+      "description": "User-created folder for organizing documents.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "name": { "type": "string", "description": "Folder name." },
+        "description": { "type": "string", "description": "Folder description." },
+        "colorHex": { "type": "string", "description": "Folder badge color hex." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last update." }
+      },
+      "required": [
+        "userId",
+        "name",
+        "description",
+        "colorHex",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SignatureItem": {
+      "title": "SignatureItem",
+      "description": "Reusable hand-drawn vector signature saved by the user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "label": { "type": "string", "description": "Signature label (e.g., Formal, Initials)." },
+        "svgPathData": { "type": "string", "description": "Normalized stroke coordinate data." },
+        "strokeColorHex": { "type": "string", "description": "Ink color hex." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last update." }
+      },
+      "required": [
+        "userId",
+        "label",
+        "svgPathData",
+        "strokeColorHex",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ExportRecord": {
+      "title": "ExportRecord",
+      "description": "Audit record of generated PDF, TXT, or CSV file exports.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "documentId": { "type": "string", "description": "Source document ID." },
+        "documentTitle": { "type": "string", "description": "Exported document title." },
+        "format": { "type": "string", "enum": ["PDF", "TXT", "CSV"], "description": "Export file format." },
+        "pageSize": { "type": "string", "description": "Paper size and orientation summary." },
+        "fileSizeBytes": { "type": "integer", "description": "Generated file size in bytes." },
+        "fileUri": { "type": "string", "description": "Local or SAF output URI." },
+        "status": { "type": "string", "enum": ["completed", "failed"], "description": "Export outcome status." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last update." }
+      },
+      "required": [
+        "userId",
+        "documentId",
+        "documentTitle",
+        "format",
+        "pageSize",
+        "fileSizeBytes",
+        "fileUri",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserSettings" },
+      "description": "Per-user application settings and preferences."
+    },
+    "/profiles/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Per-user reusable personal profile information."
+    },
+    "/documents/{documentId}": {
+      "schema": { "$ref": "#/entities/DocumentItem" },
+      "description": "User documents synced with real-time listeners."
+    },
+    "/folders/{folderId}": {
+      "schema": { "$ref": "#/entities/FolderItem" },
+      "description": "User folders for organizing documents."
+    },
+    "/signatures/{signatureId}": {
+      "schema": { "$ref": "#/entities/SignatureItem" },
+      "description": "User saved hand-drawn signatures."
+    },
+    "/exports/{exportId}": {
+      "schema": { "$ref": "#/entities/ExportRecord" },
+      "description": "User export history logs."
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Opporrs",
+  "description": "Professional document creation, editing, scanning, organizing, and exporting with 110+ templates, cloud sync, and Gemini AI intelligence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,113 @@
+name: Publish Prebuilt Android Debug APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'apk-distribution/app-debug.apk'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-apk:
+    name: Validate and Publish Prebuilt APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate prebuilt APK and SHA-256 checksum
+        id: validate
+        run: |
+          set -euo pipefail
+          APK_FILE="apk-distribution/app-debug.apk"
+          SHA_FILE="apk-distribution/app-debug.apk.sha256"
+
+          if [ ! -f "$APK_FILE" ]; then
+            echo "Error: $APK_FILE does not exist." >&2
+            exit 1
+          fi
+
+          if [ ! -s "$APK_FILE" ]; then
+            echo "Error: $APK_FILE is empty." >&2
+            exit 1
+          fi
+
+          if [ ! -f "$SHA_FILE" ] || [ ! -s "$SHA_FILE" ]; then
+            echo "Error: $SHA_FILE is missing or empty." >&2
+            exit 1
+          fi
+
+          echo "Verifying SHA-256 checksum..."
+          (cd apk-distribution && sha256sum -c app-debug.apk.sha256)
+
+          ACTUAL_SHA256=$(sha256sum "$APK_FILE" | awk '{print $1}')
+          RECORDED_SHA256=$(awk '{print $1}' "$SHA_FILE")
+          if [ "$ACTUAL_SHA256" != "$RECORDED_SHA256" ]; then
+            echo "Error: Checksum mismatch! Expected $RECORDED_SHA256, got $ACTUAL_SHA256" >&2
+            exit 1
+          fi
+
+          echo "Validating ZIP archive structure of APK..."
+          unzip -tq "$APK_FILE"
+
+          APK_BYTES=$(stat -c "%s" "$APK_FILE")
+          APK_HUMAN=$(ls -lh "$APK_FILE" | awk '{print $5}')
+          RELEASE_TAG="debug-apk-build-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+
+          echo "apk_sha256=$ACTUAL_SHA256" >> "$GITHUB_OUTPUT"
+          echo "apk_bytes=$APK_BYTES" >> "$GITHUB_OUTPUT"
+          echo "apk_human=$APK_HUMAN" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ steps.validate.outputs.release_tag }}"
+          APK_SHA256="${{ steps.validate.outputs.apk_sha256 }}"
+          APK_BYTES="${{ steps.validate.outputs.apk_bytes }}"
+          APK_HUMAN="${{ steps.validate.outputs.apk_human }}"
+          REPO="${GITHUB_REPOSITORY}"
+          LATEST_DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/app-debug.apk"
+          RELEASE_PAGE_URL="https://github.com/${REPO}/releases/tag/${RELEASE_TAG}"
+
+          NOTES=$(cat <<EOF
+          ### Prebuilt Android Debug APK Release
+
+          - **Release Tag:** \`${RELEASE_TAG}\`
+          - **APK Asset:** \`app-debug.apk\`
+          - **APK Size:** ${APK_HUMAN} (${APK_BYTES} bytes)
+          - **SHA-256 Checksum:** \`${APK_SHA256}\`
+          - **Direct Download (Latest):** [${LATEST_DOWNLOAD_URL}](${LATEST_DOWNLOAD_URL})
+          EOF
+          )
+
+          gh release create "$RELEASE_TAG" \
+            "apk-distribution/app-debug.apk" \
+            --repo "$REPO" \
+            --title "Android Debug APK (${RELEASE_TAG})" \
+            --notes "$NOTES" \
+            --latest
+
+          echo "release_page_url=$RELEASE_PAGE_URL" >> "$GITHUB_OUTPUT"
+          echo "latest_download_url=$LATEST_DOWNLOAD_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Write Job Summary
+        if: success()
+        run: |
+          {
+            echo "## Android Debug APK Published"
+            echo ""
+            echo "- **Release Tag:** \`${{ steps.validate.outputs.release_tag }}\`"
+            echo "- **APK Size:** ${{ steps.validate.outputs.apk_human }} (${{ steps.validate.outputs.apk_bytes }} bytes)"
+            echo "- **SHA-256:** \`${{ steps.validate.outputs.apk_sha256 }}\`"
+            echo "- **GitHub Release Page:** ${{ steps.release.outputs.release_page_url }}"
+            echo "- **Direct Latest APK Download URL:** ${{ steps.release.outputs.latest_download_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
